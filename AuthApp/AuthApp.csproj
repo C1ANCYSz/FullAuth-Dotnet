@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <Folder Include="Config\" />
+    <Folder Include="Middlewares\" />
   </ItemGroup>
 
 </Project>
