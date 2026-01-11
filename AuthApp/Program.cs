@@ -1,13 +1,15 @@
 using AuthApp.Config;
 using AuthApp.Infrastructure.Database;
 using AuthApp.Middlewares;
-
+using AuthApp.Features;
 var builder = WebApplication.CreateBuilder(args);
 
 
 builder
 .RegisterEnvVariables()
-.RegisterDbContext();
+.RegisterDbContext()
+.RegisterFeatures();
+
 
 builder.Services.AddControllers();
 

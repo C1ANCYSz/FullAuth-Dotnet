@@ -24,6 +24,8 @@
 
   <ItemGroup>
     <Folder Include="Config\" />
+    <Folder Include="Features\User\DTOs\" />
+    <Folder Include="Features\User\Validators\" />
     <Folder Include="Infrastructure\Security\" />
     <Folder Include="Interceptors\" />
     <Folder Include="Middlewares\" />
