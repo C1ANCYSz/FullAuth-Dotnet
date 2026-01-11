@@ -9,71 +9,58 @@ namespace AuthApp.Features.User;
 public class UserRepository(AppDbContext db)
 {
 
-    public async Task<Guid?> FindUserById(string id)
+    public async Task<bool> FindUserById(Guid id)
     {
-        var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == Guid.Parse(id));
-        if (user is null) return null;
-        return user.Id;
+        var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id);
+        if (user is null) return false;
+        return true;
     }
 
-    public async Task<Guid?> FindUserByEmail(string email)
+    public async Task<User?> FindUserByEmail(string email)
     {
         var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Email == email);
         if (user is null) return null;
-        return user.Id;
+        return user;
     }
 
-    public async Task<UserDto?> GetUserProfile(string id)
+    public async Task<User?> GetUserProfile(Guid id)
     {
-        var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == Guid.Parse(id));
+        var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id);
         if (user is null) return null;
-        return new UserDto
-        {
-            Id = user.Id,
-            Name = user.Name,
-            Email = user.Email,
-            Dob = user.Dob
-        };
+        return user;
 
 
     }
 
 
-    public async Task<UserDto?> CreateUser(SignupDto data)
+    public async Task<User> CreateUser(string email, string hashedPassword)
     {
         var user = new User
         {
-            Email = data.Email,
-            Password = data.Password,
+            Email = email,
+            Password = hashedPassword
 
 
         };
         await db.Users.AddAsync(user);
         await db.SaveChangesAsync();
-        return null;
+        return user;
     }
 
-    public async Task<UserDto?> UpdateUserProfile(Guid id, UpdateUserDto data)
+    public async Task<User?> UpdateUserProfile(Guid id, UpdateUserDto data)
     {
-        var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id);
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Id == id);
         if (user is null) return null;
 
         if (data.Bio is not null) user.Name = data.Bio;
 
         await db.SaveChangesAsync();
-        return new UserDto
-        {
-            Id = user.Id,
-            Name = user.Name,
-            Email = user.Email,
-            Dob = user.Dob,
-            Bio = user.Bio
-        };
+        return user;
     }
 
     public async Task<bool> DeleteAccount(Guid id)
     {
-        var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id);
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Id == id);
         if (user is null) return false;
 
         db.Users.Remove(user);

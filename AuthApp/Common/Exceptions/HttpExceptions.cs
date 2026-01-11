@@ -49,3 +49,6 @@ public sealed class TokenExpiredException(string message)
 public sealed class TokenRevokedException(string message)
     : DomainException(message, StatusCodes.Status401Unauthorized)
 { }
+
+
+public sealed class InvalidTokenException(string message) : DomainException(message, StatusCodes.Status401Unauthorized) { }

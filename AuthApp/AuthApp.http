@@ -1,6 +1,34 @@
-@AuthApp_HostAddress = http://localhost:5078
-
-GET {{AuthApp_HostAddress}}/weatherforecast/
-Accept: application/json
+@HOST = http://localhost:3000
 
 ###
+
+POST  {{HOST}}/api/auth/login
+Content-Type: application/json
+Accept: application/json
+
+{
+ "email": "clls@gm.com",
+  "password": "12345678",
+  "confirmPassword":"12345678"
+}
+###
+
+POST {{HOST}}/api/auth/signup
+Content-Type: application/json
+Accept: application/json
+
+{
+ "email": "clls@gm.com",
+  "password": "12345678",
+  "confirmPassword":"12345678"
+}
+
+###
+
+GET {{HOST}}/api/user/profile
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmMTBiYmYyNS01ZmI3LTQ0YTQtYjVmNi00MjhlNDNkYmU3NzEiLCJleHAiOjE3NjgxNjI0MzV9.5L5up5IGwKU71IGe2qDqpHwIdlQuopWL8-2AIt1X7sY
+
+
+
+

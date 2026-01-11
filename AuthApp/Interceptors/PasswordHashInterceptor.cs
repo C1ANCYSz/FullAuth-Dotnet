@@ -1,9 +1,7 @@
-
-
+using AuthApp.Common.Utils;
 using AuthApp.Features.User;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using AuthApp.Infrastructure.Security;
 
 namespace AuthApp.Interceptors;
 
@@ -11,23 +9,25 @@ public sealed class PasswordHashInterceptor : SaveChangesInterceptor
 {
     private static void HashPasswords(DbContext context)
     {
-        var entries = context.ChangeTracker.Entries<User>()
+        var entries = context.ChangeTracker
+            .Entries<User>()
             .Where(e =>
                 e.State == EntityState.Added ||
-                e.State == EntityState.Modified);
+                (e.State == EntityState.Modified &&
+                 e.Property(nameof(User.Password)).IsModified)
+            );
 
         foreach (var entry in entries)
         {
-            if (!entry.Property(u => u.Password).IsModified &&
-                entry.State != EntityState.Added)
-                continue;
-
             var password = entry.Entity.Password;
 
-            if (password.StartsWith("$2"))
+            if (string.IsNullOrWhiteSpace(password))
+                throw new InvalidOperationException("Password cannot be empty");
+
+            if (PasswordUtil.IsHashed(password))
                 continue;
 
-            entry.Entity.Password = PasswordHasher.Hash(password);
+            entry.Entity.Password = PasswordUtil.Hash(password);
         }
     }
 
@@ -35,7 +35,7 @@ public sealed class PasswordHashInterceptor : SaveChangesInterceptor
         DbContextEventData eventData,
         InterceptionResult<int> result)
     {
-        if (eventData.Context != null)
+        if (eventData.Context is not null)
             HashPasswords(eventData.Context);
 
         return result;
@@ -46,7 +46,7 @@ public sealed class PasswordHashInterceptor : SaveChangesInterceptor
         InterceptionResult<int> result,
         CancellationToken cancellationToken = default)
     {
-        if (eventData.Context != null)
+        if (eventData.Context is not null)
             HashPasswords(eventData.Context);
 
         return ValueTask.FromResult(result);

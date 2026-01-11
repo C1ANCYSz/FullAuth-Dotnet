@@ -1,6 +1,6 @@
 
 using FluentValidation;
-using AuthApp.Common.Exeptions;
+using AuthApp.Common.Exceptions;
 
 namespace AuthApp.Middlewares;
 
@@ -37,6 +37,13 @@ public sealed class GlobalExceptionMiddleware(
             if (context.Response.HasStarted) throw;
 
             context.Response.StatusCode = ex.StatusCode;
+            await WriteJson(context, new { error = ex.Message });
+        }
+        catch (NotImplementedException ex)
+        {
+            if (context.Response.HasStarted) throw;
+
+            context.Response.StatusCode = StatusCodes.Status501NotImplemented;
             await WriteJson(context, new { error = ex.Message });
         }
         catch (Exception ex)
