@@ -3,7 +3,8 @@
 using AuthApp.Config;
 using Microsoft.Extensions.Options;
 using Microsoft.EntityFrameworkCore;
-using AuthApp.Features.User;
+
+using AuthApp.Interceptors;
 
 namespace AuthApp.Infrastructure.Database;
 
@@ -11,12 +12,18 @@ public static class DbRegisteration
 {
     public static WebApplicationBuilder RegisterDbContext(this WebApplicationBuilder builder)
     {
+        builder.Services.AddSingleton<PasswordHashInterceptor>();
+
         builder.Services.AddDbContext<AppDbContext>((sp, options) =>
         {
             var connectionString = sp.GetRequiredService<IOptions<Env>>().Value.DB_CONNECTION_STRING;
 
             options.UseNpgsql(connectionString,
              o => o.EnableRetryOnFailure());
+
+            options.AddInterceptors(
+             sp.GetRequiredService<PasswordHashInterceptor>()
+  );
 
         });
 
