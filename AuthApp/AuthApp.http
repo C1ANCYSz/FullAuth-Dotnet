@@ -2,33 +2,19 @@
 
 ###
 
-POST  {{HOST}}/api/auth/login
+POST {{HOST}}/api/auth/login
 Content-Type: application/json
-Accept: application/json
 
 {
- "email": "clls@gm.com",
-  "password": "12345678",
-  "confirmPassword":"12345688"
+  "email": "clls@gm.com",
+  "password": "12345678"
 }
+
 ###
 
-POST {{HOST}}/api/auth/signup
-Content-Type: application/json
-Accept: application/json
-
-{
- "email": "clls@gm.com",
-  "password": "12345678",
-  "confirmPassword":"12345678"
-}
+@ACCESS_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmMTBiYmYyNS01ZmI3LTQ0YTQtYjVmNi00MjhlNDNkYmU3NzEiLCJpc19vbmJvYXJkIjoidHJ1ZSIsImV4cCI6MTc2ODIyOTQ3MH0.TkmkkGWIolv-BC5RhefI-_NH6fxzraSvnfXjjzPIV7E
 
 ###
 
 GET {{HOST}}/api/user/profile
-Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmMTBiYmYyNS01ZmI3LTQ0YTQtYjVmNi00MjhlNDNkYmU3NzEiLCJleHAiOjE3NjgxNjI0MzV9.5L5up5IGwKU71IGe2qDqpHwIdlQuopWL8-2AIt1X7sY
-
-
-
-
+Authorization: Bearer {{ACCESS_TOKEN}}

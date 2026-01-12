@@ -1,12 +1,6 @@
-
 namespace AuthApp.Features.User.DTOs;
 
-public record class UpdateUserDto
+public record class UpdateProfileDto
 {
-
     public string? Bio { get; init; }
-
-
-
-
 }

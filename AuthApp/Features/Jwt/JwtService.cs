@@ -1,14 +1,10 @@
-using System;
-
-
-using AuthApp.Config;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using AuthApp.Common.Errors;
+using AuthApp.Config;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using AuthApp.Common.Exceptions;
-using Microsoft.AspNetCore.Authentication.OAuth.Claims;
 
 namespace AuthApp.Features.Jwt;
 
@@ -16,24 +12,15 @@ public sealed class JwtService(IOptions<JwtOptions> options)
 {
     private readonly JwtOptions _jwt = options.Value;
 
-    public string GenerateAccessToken(Guid userId, bool? isOnboard = null)
+    public string GenerateAccessToken(Guid userId, bool isOnboard)
     {
-        var claims = new List<Claim>
-    {
-        new(JwtRegisteredClaimNames.Sub, userId.ToString())
-    };
-
-        if (isOnboard.HasValue)
+        var claims = new[]
         {
-            claims.Add(new Claim(
-                "is_onboard",
-                isOnboard.Value ? "true" : "false"
-            ));
-        }
+            new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
+            new Claim("is_onboard", isOnboard ? "true" : "false"),
+        };
 
-        var key = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(_jwt.ACCESS_TOKEN_SECRET)
-        );
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwt.ACCESS_TOKEN_SECRET));
 
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
@@ -51,12 +38,10 @@ public sealed class JwtService(IOptions<JwtOptions> options)
         var claims = new[]
         {
             new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
-            new Claim("token_version", tokenVersion.ToString())
+            new Claim("token_version", tokenVersion.ToString()),
         };
 
-        var key = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(_jwt.REFRESH_TOKEN_SECRET)
-        );
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwt.REFRESH_TOKEN_SECRET));
 
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
@@ -86,7 +71,7 @@ public sealed class JwtService(IOptions<JwtOptions> options)
                         Encoding.UTF8.GetBytes(_jwt.REFRESH_TOKEN_SECRET)
                     ),
                     ValidateLifetime = true,
-                    ClockSkew = TimeSpan.Zero
+                    ClockSkew = TimeSpan.Zero,
                 },
                 out _
             );
@@ -105,23 +90,4 @@ public sealed class JwtService(IOptions<JwtOptions> options)
 
         return header["Bearer ".Length..];
     }
-
-    public Guid GetUserId(ClaimsPrincipal principal)
-    {
-        var sub = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value
-            ?? throw new InvalidTokenException("Token missing sub claim");
-
-        return Guid.Parse(sub);
-    }
-
-    public int GetTokenVersion(ClaimsPrincipal principal)
-    {
-        var value = principal.FindFirst("token_version")?.Value
-            ?? throw new InvalidTokenException("Unauthorized Token");
-
-        return int.Parse(value);
-    }
-
-
-
 }

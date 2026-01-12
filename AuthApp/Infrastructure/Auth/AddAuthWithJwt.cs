@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using AuthApp.Config;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -9,11 +10,15 @@ public static class AddAuth
 {
     public static WebApplicationBuilder AddAuthWithJwt(this WebApplicationBuilder builder)
     {
-        builder.Services.AddAuthentication(options =>
-        {
-            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-        }).AddJwtBearer(options =>
+        JwtSecurityTokenHandler.DefaultMapInboundClaims = false;
+
+        builder
+            .Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
             {
                 var jwt = builder.Configuration.GetSection("JWT").Get<JwtOptions>()!;
 
@@ -26,12 +31,28 @@ public static class AddAuth
                         Encoding.UTF8.GetBytes(jwt.ACCESS_TOKEN_SECRET)
                     ),
                     ValidateLifetime = true,
-                    ClockSkew = TimeSpan.Zero
+                    ClockSkew = TimeSpan.Zero,
                 };
             });
 
-        builder.Services.AddAuthorization();
-
+        builder
+            .Services.AddAuthorizationBuilder()
+            .AddPolicy(
+                "OnboardedOnly",
+                policy =>
+                {
+                    policy.RequireAuthenticatedUser();
+                    policy.RequireClaim("is_onboard", "true");
+                }
+            )
+            .AddPolicy(
+                "NotOnboardedOnly",
+                policy =>
+                {
+                    policy.RequireAuthenticatedUser();
+                    policy.RequireClaim("is_onboard", "false");
+                }
+            );
 
         return builder;
     }

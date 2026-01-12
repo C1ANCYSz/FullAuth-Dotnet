@@ -1,6 +1,6 @@
 using System;
 
-namespace AuthApp.Common.Utils;
+namespace AuthApp.Common.Utils.Security;
 
 public static class PasswordUtil
 {
@@ -22,7 +22,6 @@ public static class PasswordUtil
 
     public static bool IsHashed(string value)
     {
-
         return value.StartsWith("$2");
     }
 
