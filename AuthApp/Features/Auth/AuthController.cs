@@ -28,6 +28,13 @@ namespace AuthApp.Features.Auth
         {
             throw new NotImplementedException();
         }
+
+        [HttpGet("refresh-token")]
+        public async Task<IActionResult> RefreshToken(string refreshToken)
+        {
+            var response = await authService.RefreshTokens(refreshToken);
+            return Ok(response);
+        }
     }
 
 

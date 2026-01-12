@@ -9,7 +9,7 @@ Accept: application/json
 {
  "email": "clls@gm.com",
   "password": "12345678",
-  "confirmPassword":"12345678"
+  "confirmPassword":"12345688"
 }
 ###
 

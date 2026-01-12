@@ -1,4 +1,5 @@
 using System;
+using AuthApp.Common.Exceptions;
 using AuthApp.Features.Auth.DTOs;
 using AuthApp.Features.User.DTOs;
 using AuthApp.Infrastructure.Database;
@@ -9,12 +10,19 @@ namespace AuthApp.Features.User;
 public class UserRepository(AppDbContext db)
 {
 
-    public async Task<bool> FindUserById(Guid id)
+    public async Task<User?> FindUserById(Guid id)
     {
         var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id);
-        if (user is null) return false;
-        return true;
+        if (user is null) return null;
+        return user;
     }
+
+    public async Task<User?> GetUserForTokenRotation(Guid id)
+    {
+        return await db.Users.FirstOrDefaultAsync(u => u.Id == id);
+    }
+
+
 
     public async Task<User?> FindUserByEmail(string email)
     {
@@ -58,6 +66,20 @@ public class UserRepository(AppDbContext db)
         return user;
     }
 
+
+    public async Task<User?> Onboard(Guid id, OnboardDto data)
+    {
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Id == id);
+        if (user is null) return null;
+
+        user.Dob = data.Dob;
+        user.Name = data.Name;
+        user.IsOnboard = true;
+        await db.SaveChangesAsync();
+
+        return user;
+    }
+
     public async Task<bool> DeleteAccount(Guid id)
     {
         var user = await db.Users.FirstOrDefaultAsync(u => u.Id == id);
@@ -69,7 +91,10 @@ public class UserRepository(AppDbContext db)
 
         return true;
     }
-
+    public async Task SaveAsync()
+    {
+        await db.SaveChangesAsync();
+    }
 
 
 }

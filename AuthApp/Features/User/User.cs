@@ -1,4 +1,5 @@
 
+using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -23,6 +24,9 @@ public class User
     public int TokenVersion { get; set; } = 0;
     public bool IsOnboard { get; set; } = false;
 
+
+    [Timestamp]
+    public byte[] RowVersion { get; set; } = default!;
 
 }
 

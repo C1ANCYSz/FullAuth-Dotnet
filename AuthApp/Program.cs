@@ -4,6 +4,7 @@ using AuthApp.Middlewares;
 using AuthApp.Features;
 using AuthApp.Infrastructure.Auth;
 using AuthApp.Infrastructure;
+using AuthApp.Infrastructure.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,7 +15,8 @@ builder
 .AddAuthWithJwt()
 .RegisterDbContext()
 .AddFluentValidation()
-.RegisterFeatures();
+.RegisterFeatures()
+.RegisterRedisClient();
 
 
 builder.Services.AddControllers();

@@ -1,7 +1,6 @@
 using System;
 
 
-using System;
 using AuthApp.Config;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -9,6 +8,7 @@ using System.Text;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using AuthApp.Common.Exceptions;
+using Microsoft.AspNetCore.Authentication.OAuth.Claims;
 
 namespace AuthApp.Features.Jwt;
 
@@ -16,13 +16,20 @@ public sealed class JwtService(IOptions<JwtOptions> options)
 {
     private readonly JwtOptions _jwt = options.Value;
 
-    public string GenerateAccessToken(Guid userId)
+    public string GenerateAccessToken(Guid userId, bool? isOnboard = null)
     {
-        var claims = new[]
-        {
-            new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
+        var claims = new List<Claim>
+    {
+        new(JwtRegisteredClaimNames.Sub, userId.ToString())
+    };
 
-        };
+        if (isOnboard.HasValue)
+        {
+            claims.Add(new Claim(
+                "is_onboard",
+                isOnboard.Value ? "true" : "false"
+            ));
+        }
 
         var key = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(_jwt.ACCESS_TOKEN_SECRET)
@@ -39,12 +46,12 @@ public sealed class JwtService(IOptions<JwtOptions> options)
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
-    public string GenerateRefreshToken(Guid userId)
+    public string GenerateRefreshToken(Guid userId, int tokenVersion)
     {
         var claims = new[]
         {
             new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
-
+            new Claim("token_version", tokenVersion.ToString())
         };
 
         var key = new SymmetricSecurityKey(
@@ -106,6 +113,15 @@ public sealed class JwtService(IOptions<JwtOptions> options)
 
         return Guid.Parse(sub);
     }
+
+    public int GetTokenVersion(ClaimsPrincipal principal)
+    {
+        var value = principal.FindFirst("token_version")?.Value
+            ?? throw new InvalidTokenException("Unauthorized Token");
+
+        return int.Parse(value);
+    }
+
 
 
 }

@@ -24,6 +24,9 @@ public static class DbRegisteration
             options.AddInterceptors(
              sp.GetRequiredService<PasswordHashInterceptor>()
   );
+            //dotnet ef migrations add InitialCreate
+
+            //dotnet ef database update
 
         });
 

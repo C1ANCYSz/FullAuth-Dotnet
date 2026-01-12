@@ -7,6 +7,7 @@ public sealed class Env
 {
 
     [Required] public string DB_CONNECTION_STRING { get; init; } = default!;
+    [Required] public string REDIS_CONNECTION_STRING { get; init; } = default!;
 
 
 }
