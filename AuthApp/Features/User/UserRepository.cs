@@ -14,6 +14,14 @@ public class UserRepository(AppDbContext db)
         return user;
     }
 
+    public async Task<User?> FindUserByIdAsNoTracking(Guid id)
+    {
+        var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id);
+        if (user is null)
+            return null;
+        return user;
+    }
+
     public async Task<User?> GetUserForTokenRotation(Guid id)
     {
         return await db.Users.FirstOrDefaultAsync(u => u.Id == id);
@@ -50,7 +58,7 @@ public class UserRepository(AppDbContext db)
             return null;
 
         if (data.Bio is not null)
-            user.Name = data.Bio;
+            user.Bio = data.Bio;
 
         await db.SaveChangesAsync();
         return user;

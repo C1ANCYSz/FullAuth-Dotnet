@@ -47,9 +47,9 @@ public class AuthService(UserRepository userRepository, JwtService jwtService)
 
         var user = await userRepository.CreateUser(data.Email, data.Password);
 
-        var accessToken = jwtService.GenerateAccessToken(user.Id, false);
+        var accessToken = jwtService.GenerateAccessToken(user.Id, user.IsOnboard);
 
-        var refreshToken = jwtService.GenerateRefreshToken(user.Id, 0);
+        var refreshToken = jwtService.GenerateRefreshToken(user.Id, user.TokenVersion);
 
         return new LoginResponseDto { AccessToken = accessToken, RefreshToken = refreshToken };
     }

@@ -1,14 +1,14 @@
-using AuthApp.Common;
-using AuthApp.Common.Auth;
+using AuthApp.Common.Auth.Attributes;
 using AuthApp.Common.Extensions;
-using AuthApp.Features.Jwt;
 using AuthApp.Features.User.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AuthApp.Features.User
 {
-    [Authorize(Policy = AuthPolicies.Onboard)]
+    // [Authorize(Policy = AuthPolicies.Onboard)]
+    [Authorize]
+    [RequireOnboard]
     [Route("api/user")]
     [ApiController]
     public class UserController(UserService userService) : ControllerBase
@@ -20,17 +20,27 @@ namespace AuthApp.Features.User
             return Ok(await userService.GetProfile(userId));
         }
 
-        [Authorize(Policy = AuthPolicies.NotOnboard)]
-        public async Task<IActionResult> Onboard(OnboardDto data)
+        [SkipOnboardCheck]
+        [HttpPost("onboard")]
+        public async Task<IActionResult> Onboard([FromBody] OnboardDto data)
         {
             var userId = User.GetUserId();
             return Ok(await userService.Onboard(userId, data));
         }
 
-        public async Task<IActionResult> UpdateProfle(OnboardDto data)
+        [HttpPut("profile")]
+        public async Task<IActionResult> UpdateProfle(UpdateProfileDto data)
         {
             var userId = User.GetUserId();
-            return Ok(await userService.Onboard(userId, data));
+            return Ok(await userService.UpdateProfile(userId, data));
+        }
+
+        [HttpDelete("delete-account")]
+        public async Task<IActionResult> DeleteAccount()
+        {
+            var userId = User.GetUserId();
+            await userService.DeleteAccount(userId);
+            return NoContent();
         }
     }
 }

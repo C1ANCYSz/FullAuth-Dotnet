@@ -1,7 +1,6 @@
 using AuthApp.Common.Extensions;
 using AuthApp.Features.Auth.DTOs;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AuthApp.Features.Auth
@@ -24,10 +23,10 @@ namespace AuthApp.Features.Auth
             return Ok(response);
         }
 
-        [HttpGet("refresh-token")]
-        public async Task<IActionResult> RefreshToken(string refreshToken)
+        [HttpPost("refresh-token")]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenDto data)
         {
-            var response = await authService.RefreshTokens(refreshToken);
+            var response = await authService.RefreshTokens(data.RefreshToken);
             return Ok(response);
         }
 

@@ -1,9 +1,10 @@
 using AuthApp.Common.Errors;
+using AuthApp.Features.Jwt;
 using AuthApp.Features.User.DTOs;
 
 namespace AuthApp.Features.User;
 
-public class UserService(UserRepository userRepository)
+public class UserService(UserRepository userRepository, JwtService jwtService)
 {
     public async Task<UserDto> GetProfile(Guid id)
     {
@@ -17,13 +18,15 @@ public class UserService(UserRepository userRepository)
         return new UserDto(user.Id, user.Email, user.Name, user.Dob, user.Bio);
     }
 
-    public async Task<UserDto> Onboard(Guid id, OnboardDto data)
+    public async Task<OnboardDtoResponse> Onboard(Guid id, OnboardDto data)
     {
         var user =
             await userRepository.Onboard(id, data)
             ?? throw new BadRequestException("User not found");
-
-        return new UserDto(user.Id, user.Email, user.Name, user.Dob, user.Bio);
+        var AccessToken = jwtService.GenerateAccessToken(user.Id, user.IsOnboard);
+        var newUser = new UserDto(user.Id, user.Email, user.Name, user.Dob, user.Bio);
+        var response = new OnboardDtoResponse(newUser, AccessToken);
+        return response;
     }
 
     public async Task<UserDto> UpdateProfile(Guid id, UpdateProfileDto data)
@@ -33,5 +36,10 @@ public class UserService(UserRepository userRepository)
             ?? throw new BadRequestException("User not found");
 
         return new UserDto(user.Id, user.Email, user.Name, user.Dob, user.Bio);
+    }
+
+    public async Task<bool> DeleteAccount(Guid id)
+    {
+        return await userRepository.DeleteAccount(id);
     }
 }
