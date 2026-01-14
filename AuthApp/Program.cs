@@ -16,17 +16,18 @@ builder
     .RegisterDbContext()
     .AddFluentValidation()
     .RegisterFeatures()
-    .RegisterRedisClient()
-    .RegisterRateLimits();
+    .RegisterRedisClient();
+
+// .RegisterRateLimits();
 
 builder.Services.AddControllers();
 
 var app = builder.Build();
 
 app.ConnectDb();
-app.UseRateLimiter();
 
 app.UseMiddleware<GlobalExceptionMiddleware>();
+app.UseMiddleware<RedisRateLimitMiddleware>();
 app.MapControllers();
 
 app.Run();

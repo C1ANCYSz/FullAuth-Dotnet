@@ -9,7 +9,7 @@ namespace AuthApp.Features.User
     // [Authorize(Policy = AuthPolicies.Onboard)]
     [Authorize]
     [RequireOnboard]
-    [Route("api/user")]
+    [Route("api/users/me")]
     [ApiController]
     public class UserController(UserService userService) : ControllerBase
     {
