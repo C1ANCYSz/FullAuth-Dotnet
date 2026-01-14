@@ -1,4 +1,5 @@
 using AuthApp.Common.Middleware;
+using AuthApp.Common.RateLimit;
 using AuthApp.Config;
 using AuthApp.Features;
 using AuthApp.Infrastructure;
@@ -15,13 +16,15 @@ builder
     .RegisterDbContext()
     .AddFluentValidation()
     .RegisterFeatures()
-    .RegisterRedisClient();
+    .RegisterRedisClient()
+    .RegisterRateLimits();
 
 builder.Services.AddControllers();
 
 var app = builder.Build();
 
 app.ConnectDb();
+app.UseRateLimiter();
 
 app.UseMiddleware<GlobalExceptionMiddleware>();
 app.MapControllers();

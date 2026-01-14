@@ -25,6 +25,7 @@
 
   <ItemGroup>
     <Folder Include="Common\Auth\Attributes\" />
+    <Folder Include="Common\Constants\" />
     <Folder Include="Common\Extensions\" />
     <Folder Include="Common\Filters\" />
     <Folder Include="Config\" />

@@ -1,7 +1,9 @@
 using AuthApp.Common.Extensions;
+using AuthApp.Common.RateLimit;
 using AuthApp.Features.Auth.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace AuthApp.Features.Auth
 {
@@ -10,6 +12,7 @@ namespace AuthApp.Features.Auth
     public class AuthController(AuthService authService) : ControllerBase
     {
         [HttpPost("login")]
+        [EnableRateLimiting(RateLimitPolicies.AuthLogin)]
         public async Task<IActionResult> Login(LoginDto data)
         {
             var response = await authService.Login(data);
@@ -17,6 +20,7 @@ namespace AuthApp.Features.Auth
         }
 
         [HttpPost("signup")]
+        [EnableRateLimiting(RateLimitPolicies.AuthSignup)]
         public async Task<IActionResult> Signup(SignupDto data)
         {
             var response = await authService.Signup(data);
