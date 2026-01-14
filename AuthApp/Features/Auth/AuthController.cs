@@ -28,6 +28,7 @@ namespace AuthApp.Features.Auth
         }
 
         [HttpPost("refresh-token")]
+        [EnableRateLimiting(RateLimitPolicies.AuthRefresh)]
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenDto data)
         {
             var response = await authService.RefreshTokens(data.RefreshToken);
@@ -36,6 +37,7 @@ namespace AuthApp.Features.Auth
 
         [Authorize]
         [HttpPost("logout")]
+        [EnableRateLimiting(RateLimitPolicies.AuthLogout)]
         public async Task<IActionResult> Logout()
         {
             var userId = User.GetUserId();
@@ -44,6 +46,7 @@ namespace AuthApp.Features.Auth
         }
 
         // [HttpPost("auth/oauth/{provider}")]
+        // [EnableRateLimiting(RateLimitPolicies.AuthLogin)]
         // public async Task<IActionResult> OAuthLogin(OAuthProvider provider, OAuthLoginDto dto)
         // {
         //     var result = await authService.LoginWithOAuth(provider, dto);

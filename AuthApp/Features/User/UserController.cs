@@ -1,12 +1,13 @@
 using AuthApp.Common.Auth.Attributes;
 using AuthApp.Common.Extensions;
+using AuthApp.Common.RateLimit;
 using AuthApp.Features.User.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace AuthApp.Features.User
 {
-    // [Authorize(Policy = AuthPolicies.Onboard)]
     [Authorize]
     [RequireOnboard]
     [Route("api/users/me")]
@@ -14,6 +15,7 @@ namespace AuthApp.Features.User
     public class UserController(UserService userService) : ControllerBase
     {
         [HttpGet("profile")]
+        [EnableRateLimiting(RateLimitPolicies.UserRead)]
         public async Task<IActionResult> GetProfile()
         {
             var userId = User.GetUserId();
@@ -22,6 +24,7 @@ namespace AuthApp.Features.User
 
         [SkipOnboardCheck]
         [HttpPost("onboard")]
+        [EnableRateLimiting(RateLimitPolicies.UserWrite)]
         public async Task<IActionResult> Onboard([FromBody] OnboardDto data)
         {
             var userId = User.GetUserId();
@@ -29,6 +32,7 @@ namespace AuthApp.Features.User
         }
 
         [HttpPut("profile")]
+        [EnableRateLimiting(RateLimitPolicies.UserWrite)]
         public async Task<IActionResult> UpdateProfle(UpdateProfileDto data)
         {
             var userId = User.GetUserId();
@@ -36,6 +40,7 @@ namespace AuthApp.Features.User
         }
 
         [HttpDelete("delete-account")]
+        [EnableRateLimiting(RateLimitPolicies.UserSensitive)]
         public async Task<IActionResult> DeleteAccount()
         {
             var userId = User.GetUserId();

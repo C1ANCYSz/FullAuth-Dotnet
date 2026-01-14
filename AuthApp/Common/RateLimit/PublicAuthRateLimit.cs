@@ -6,11 +6,10 @@ internal sealed record FixedWindowPolicy(TimeSpan Window, int PermitLimit, strin
 
 internal static class AuthRateLimitConfig
 {
-    public static readonly Dictionary<string, FixedWindowPolicy> Policies = new Dictionary<
-        string,
-        FixedWindowPolicy
-    >
+    public static readonly Dictionary<string, FixedWindowPolicy> Policies = new()
     {
+        //Auth
+
         [RateLimitPolicies.AuthLogin] = new(
             Window: TimeSpan.FromMinutes(1),
             PermitLimit: 5,
@@ -23,10 +22,36 @@ internal static class AuthRateLimitConfig
             Message: "Too many signup attempts. Please try again later."
         ),
 
-        [RateLimitPolicies.AuthOtp] = new(
+        [RateLimitPolicies.AuthRefresh] = new(
             Window: TimeSpan.FromMinutes(1),
+            PermitLimit: 10,
+            Message: "Too many token refresh attempts. Slow down."
+        ),
+
+        [RateLimitPolicies.AuthLogout] = new(
+            Window: TimeSpan.FromMinutes(1),
+            PermitLimit: 5,
+            Message: "Too many logout requests."
+        ),
+
+        //User
+
+        [RateLimitPolicies.UserRead] = new(
+            Window: TimeSpan.FromMinutes(1),
+            PermitLimit: 60,
+            Message: "Too many requests. Please slow down."
+        ),
+
+        [RateLimitPolicies.UserWrite] = new(
+            Window: TimeSpan.FromMinutes(1),
+            PermitLimit: 20,
+            Message: "Too many update requests. Please try again shortly."
+        ),
+
+        [RateLimitPolicies.UserSensitive] = new(
+            Window: TimeSpan.FromMinutes(10),
             PermitLimit: 3,
-            Message: "OTP requests are limited. Try again shortly."
+            Message: "This action is temporarily restricted. Please try again later."
         ),
     };
 }
