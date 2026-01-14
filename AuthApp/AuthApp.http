@@ -1,54 +1,51 @@
-@HOST = http://localhost:3000
+# @HOST = http://localhost:3000
 
-###
-POST {{HOST}}/api/auth/signup
-Content-Type: application/json
+# ###
+# POST {{HOST}}/api/auth/signup
+# Content-Type: application/json
 
-{
-  "email": "cal@gm.com",
-  "password": "12345678",
-  "confirmPassword": "12345678"
-}
-###
+# {
+#   "email": "cal@gm.com",
+#   "password": "12345678",
+#   "confirmPassword": "12345678"
+# }
+# ###
 
-POST {{HOST}}/api/auth/login
-Content-Type: application/json
+# POST {{HOST}}/api/auth/login
+# Content-Type: application/json
 
-{
-  "email": "clancy@gm.com",
-  "password": "12345678"
-}
+# {
+#   "email": "clancy@gm.com",
+#   "password": "12345678"
+# }
 
-###
+# ###
 
-@REFRESH_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZTg5MmZjOS04ZjI5LTRkNDEtOWI3Ni1iOWVhMjFlZDk4OWYiLCJ0b2tlbl92ZXJzaW9uIjoiMCIsImV4cCI6MTc3MDgyNDA1N30._SfU2ztMd9SMzeCejnGEpgybm1mOz2t0ONzq-brFSaU
-POST {{HOST}}/api/auth/logout
-Content-Type: application/json
-Authorization: Bearer {{REFRESH_TOKEN}}
-###
-
-@ACCESS_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjOThmY2IyYS02MWY1LTQxNTktYmIwMC1lNWRmNGNiM2ZhZjIiLCJpc19vbmJvYXJkIjoiZmFsc2UiLCJleHAiOjE3NjgzMzYwNDN9.tpezUwMTkTgE8zt3lHGbQ-mVOJX57wco8TwxnjGg1yU
+# POST {{HOST}}/api/auth/logout
+# Content-Type: application/json
+# Authorization: Bearer {{REFRESH_TOKEN}}
+# ###
 
 
-###
 
-GET {{HOST}}/api/user/profile
-Authorization: Bearer {{ACCESS_TOKEN}}
+# ###
 
-###
+# GET {{HOST}}/api/user/profile
+# Authorization: Bearer {{ACCESS_TOKEN}}
 
-POST {{HOST}}/api/auth/refresh-token
-Content-Type: application/json
+# ###
 
-{
-  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmMTBiYmYyNS01ZmI3LTQ0YTQtYjVmNi00MjhlNDNkYmU3NzEiLCJ0b2tlbl92ZXJzaW9uIjoiMCIsImV4cCI6MTc3MDgyNTY3NH0.0JbFXy6m_RbrFnjkiOTEPm65GQkIIJlKKFzngoMSViE"
-}
+# POST {{HOST}}/api/auth/refresh-token
+# Content-Type: application/json
+
+# {
+# }
 
 
 
 
-###
+# ###
 
 
-POST {{HOST}}/api/auth/logout
-Authorization: Bearer {{ACCESS_TOKEN}}
+# POST {{HOST}}/api/auth/logout
+# Authorization: Bearer {{ACCESS_TOKEN}}
