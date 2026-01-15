@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using AuthApp.Common.Constants;
 using AuthApp.Common.Errors;
 using AuthApp.Config;
 using Microsoft.Extensions.Options;
@@ -12,12 +13,19 @@ public sealed class JwtService(IOptions<JwtOptions> options)
 {
     private readonly JwtOptions _jwt = options.Value;
 
-    public string GenerateAccessToken(Guid userId, bool isOnboard)
+    public string GenerateAccessToken(Guid userId, bool isOnboard, bool isVerified)
     {
         var claims = new[]
         {
             new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
-            new Claim("is_onboard", isOnboard ? "true" : "false"),
+            new Claim(
+                JwtArributes.isOnboard,
+                isOnboard ? JwtArributes.trueValue : JwtArributes.falseValue
+            ),
+            new Claim(
+                JwtArributes.isVerified,
+                isVerified ? JwtArributes.trueValue : JwtArributes.falseValue
+            ),
         };
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwt.ACCESS_TOKEN_SECRET));

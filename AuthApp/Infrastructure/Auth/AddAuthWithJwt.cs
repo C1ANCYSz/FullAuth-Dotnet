@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using AuthApp.Common.Constants;
 using AuthApp.Config;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -42,7 +43,7 @@ public static class AddAuth
                 policy =>
                 {
                     policy.RequireAuthenticatedUser();
-                    policy.RequireClaim("is_onboard", "true");
+                    policy.RequireClaim("is_onboard", JwtArributes.trueValue);
                 }
             )
             .AddPolicy(
@@ -50,7 +51,7 @@ public static class AddAuth
                 policy =>
                 {
                     policy.RequireAuthenticatedUser();
-                    policy.RequireClaim("is_onboard", "false");
+                    policy.RequireClaim("is_onboard", JwtArributes.falseValue);
                 }
             );
 

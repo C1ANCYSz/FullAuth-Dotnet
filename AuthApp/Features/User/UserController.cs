@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.RateLimiting;
 namespace AuthApp.Features.User
 {
     [Authorize]
+    [IsVerified]
     [RequireOnboard]
     [Route("api/users/me")]
     [ApiController]

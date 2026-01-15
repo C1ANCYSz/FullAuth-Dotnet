@@ -27,7 +27,7 @@ public class UserService(UserRepository userRepository, JwtService jwtService)
         var user =
             await _userRepository.Onboard(id, data)
             ?? throw new BadRequestException("User not found");
-        var AccessToken = _jwtService.GenerateAccessToken(user.Id, user.IsOnboard);
+        var AccessToken = _jwtService.GenerateAccessToken(user.Id, user.IsOnboard, user.IsVerified);
         var newUser = new UserDto(user.Id, user.Email, user.Name, user.Dob, user.Bio);
         var response = new OnboardDtoResponse(newUser, AccessToken);
         return response;

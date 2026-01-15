@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using AuthApp.Common.Constants;
 using AuthApp.Common.Errors;
 
 namespace AuthApp.Common.Extensions;
@@ -26,7 +27,7 @@ public static class ClaimsPrincipalExtensions
 
     public static bool IsOnboarded(this ClaimsPrincipal user)
     {
-        var value = user.FindFirst("is_onboard")?.Value;
+        var value = user.FindFirst(JwtArributes.isOnboard)?.Value;
         return value is "true";
     }
 }

@@ -43,7 +43,7 @@ public class AuthService(
         if (!PasswordUtil.Verify(data.Password, user.Password))
             throw new BadRequestException("Invalid Credentials");
 
-        var accessToken = _jwtService.GenerateAccessToken(user.Id, user.IsOnboard);
+        var accessToken = _jwtService.GenerateAccessToken(user.Id, user.IsOnboard, user.IsVerified);
         var refreshToken = _jwtService.GenerateRefreshToken(user.Id, user.TokenVersion);
 
         return new LoginResponseDto { AccessToken = accessToken, RefreshToken = refreshToken };
@@ -60,7 +60,7 @@ public class AuthService(
 
         var user = await _userRepository.CreateUser(data.Email, data.Password);
 
-        var accessToken = _jwtService.GenerateAccessToken(user.Id, user.IsOnboard);
+        var accessToken = _jwtService.GenerateAccessToken(user.Id, user.IsOnboard, user.IsVerified);
         var refreshToken = _jwtService.GenerateRefreshToken(user.Id, user.TokenVersion);
 
         return new LoginResponseDto { AccessToken = accessToken, RefreshToken = refreshToken };
@@ -92,7 +92,7 @@ public class AuthService(
             throw new UnauthorizedException("Refresh token reused");
         }
 
-        var accessToken = _jwtService.GenerateAccessToken(userId, user.IsOnboard);
+        var accessToken = _jwtService.GenerateAccessToken(userId, user.IsOnboard, user.IsVerified);
         var newRefreshToken = _jwtService.GenerateRefreshToken(userId, user.TokenVersion);
 
         return new TokenPair(accessToken, newRefreshToken);

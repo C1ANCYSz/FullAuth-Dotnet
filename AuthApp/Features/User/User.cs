@@ -28,6 +28,8 @@ public class User
     public int TokenVersion { get; set; } = 0;
     public bool IsOnboard { get; set; } = false;
 
+    public bool IsVerified { get; set; } = false;
+
     // Concurrency
     [Timestamp]
     public byte[] RowVersion { get; set; } = default!;
@@ -61,6 +63,8 @@ public sealed class UserModelConfiguration : IEntityTypeConfiguration<User>
             .HasFilter("\"ProviderId\" IS NOT NULL");
 
         entity.Property(u => u.TokenVersion).HasDefaultValue(0);
+
+        entity.Property(u => u.IsVerified).HasDefaultValue(false);
 
         entity.Property(u => u.IsOnboard).HasDefaultValue(false);
     }
