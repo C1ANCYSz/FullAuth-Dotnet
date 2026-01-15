@@ -9,6 +9,9 @@ public sealed class Env
 
     [Required]
     public string REDIS_CONNECTION_STRING { get; init; } = default!;
+
+    [Required]
+    public string BASE_URL { get; init; } = default!;
 }
 
 public static class RegisterEnv

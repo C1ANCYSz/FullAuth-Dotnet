@@ -4,11 +4,11 @@ using FluentValidation;
 
 namespace AuthApp.Features.Auth.Validators;
 
-public class LoginValidator : AbstractValidator<LoginDto>
+public class ResetPasswordValidator : AbstractValidator<ResetPasswordDto>
 {
-    public LoginValidator()
+    public ResetPasswordValidator()
     {
-        RuleFor(x => x.Email).NotEmpty().EmailAddress();
         RuleFor(x => x.Password).NotEmpty().MinimumLength(8);
+        RuleFor(x => x.ConfirmPassword).NotEmpty().Equal(x => x.Password);
     }
 }

@@ -34,6 +34,18 @@ internal static class AuthRateLimitConfig
             Message: "Too many logout requests."
         ),
 
+        [RateLimitPolicies.AuthForgotPassword] = new(
+            Window: TimeSpan.FromMinutes(1),
+            PermitLimit: 5,
+            Message: "Too many password reset requests."
+        ),
+
+        [RateLimitPolicies.AuthResetPassword] = new(
+            Window: TimeSpan.FromMinutes(1),
+            PermitLimit: 5,
+            Message: "Too many password reset requests."
+        ),
+
         //User
 
         [RateLimitPolicies.UserRead] = new(

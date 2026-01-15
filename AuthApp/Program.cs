@@ -5,6 +5,7 @@ using AuthApp.Features;
 using AuthApp.Infrastructure;
 using AuthApp.Infrastructure.Auth;
 using AuthApp.Infrastructure.Database;
+using AuthApp.Infrastructure.Email;
 using AuthApp.Infrastructure.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,7 +17,8 @@ builder
     .RegisterDbContext()
     .AddFluentValidation()
     .RegisterFeatures()
-    .RegisterRedisClient();
+    .RegisterRedisClient()
+    .RegisterSmtpClient();
 
 // .RegisterRateLimits();
 

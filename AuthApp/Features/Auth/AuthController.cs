@@ -11,28 +11,27 @@ namespace AuthApp.Features.Auth
     [ApiController]
     public class AuthController(AuthService authService) : ControllerBase
     {
+        private readonly AuthService _authService = authService;
+
         [HttpPost("login")]
         [EnableRateLimiting(RateLimitPolicies.AuthLogin)]
         public async Task<IActionResult> Login(LoginDto data)
         {
-            var response = await authService.Login(data);
-            return Ok(response);
+            return Ok(await _authService.Login(data));
         }
 
         [HttpPost("signup")]
         [EnableRateLimiting(RateLimitPolicies.AuthSignup)]
         public async Task<IActionResult> Signup(SignupDto data)
         {
-            var response = await authService.Signup(data);
-            return Ok(response);
+            return Ok(await _authService.Signup(data));
         }
 
         [HttpPost("refresh-token")]
         [EnableRateLimiting(RateLimitPolicies.AuthRefresh)]
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenDto data)
         {
-            var response = await authService.RefreshTokens(data.RefreshToken);
-            return Ok(response);
+            return Ok(await _authService.RefreshTokens(data.RefreshToken));
         }
 
         [Authorize]
@@ -41,10 +40,32 @@ namespace AuthApp.Features.Auth
         public async Task<IActionResult> Logout()
         {
             var userId = User.GetUserId();
-            await authService.Logout(userId);
+            await _authService.Logout(userId);
             return NoContent();
         }
 
+        [HttpPost("forgot-password")]
+        [AllowAnonymous]
+        [EnableRateLimiting(RateLimitPolicies.AuthForgotPassword)]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto data)
+        {
+            await _authService.ForgotPassword(data);
+
+            return Ok(new { message = "Password reset link has been sent to your email" });
+        }
+
+        [HttpPost("reset-password")]
+        [AllowAnonymous]
+        [EnableRateLimiting(RateLimitPolicies.AuthResetPassword)]
+        public async Task<IActionResult> ResetPassword(
+            [FromQuery] string token,
+            [FromBody] ResetPasswordDto data
+        )
+        {
+            await _authService.ResetPassword(token, data);
+
+            return Ok(new { message = "Password has been reset successfully" });
+        }
         // [HttpPost("auth/oauth/{provider}")]
         // [EnableRateLimiting(RateLimitPolicies.AuthLogin)]
         // public async Task<IActionResult> OAuthLogin(OAuthProvider provider, OAuthLoginDto dto)
