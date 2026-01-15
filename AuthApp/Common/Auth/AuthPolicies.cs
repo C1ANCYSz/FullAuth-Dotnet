@@ -1,5 +1,3 @@
-using System;
-
 namespace AuthApp.Common.Auth;
 
 public static class AuthPolicies

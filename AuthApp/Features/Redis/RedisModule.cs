@@ -1,4 +1,3 @@
-
 namespace AuthApp.Features.Redis;
 
 public static class RedisModule
@@ -9,5 +8,4 @@ public static class RedisModule
 
         return builder;
     }
-
 }

@@ -14,12 +14,14 @@ namespace AuthApp.Features.User
     [ApiController]
     public class UserController(UserService userService) : ControllerBase
     {
+        private readonly UserService _userService = userService;
+
         [HttpGet("profile")]
         [EnableRateLimiting(RateLimitPolicies.UserRead)]
         public async Task<IActionResult> GetProfile()
         {
             var userId = User.GetUserId();
-            return Ok(await userService.GetProfile(userId));
+            return Ok(await _userService.GetProfile(userId));
         }
 
         [SkipOnboardCheck]
@@ -28,7 +30,7 @@ namespace AuthApp.Features.User
         public async Task<IActionResult> Onboard([FromBody] OnboardDto data)
         {
             var userId = User.GetUserId();
-            return Ok(await userService.Onboard(userId, data));
+            return Ok(await _userService.Onboard(userId, data));
         }
 
         [HttpPut("profile")]
@@ -36,7 +38,7 @@ namespace AuthApp.Features.User
         public async Task<IActionResult> UpdateProfle(UpdateProfileDto data)
         {
             var userId = User.GetUserId();
-            return Ok(await userService.UpdateProfile(userId, data));
+            return Ok(await _userService.UpdateProfile(userId, data));
         }
 
         [HttpDelete("delete-account")]
@@ -44,7 +46,7 @@ namespace AuthApp.Features.User
         public async Task<IActionResult> DeleteAccount()
         {
             var userId = User.GetUserId();
-            await userService.DeleteAccount(userId);
+            await _userService.DeleteAccount(userId);
             return NoContent();
         }
     }
