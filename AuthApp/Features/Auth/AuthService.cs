@@ -6,6 +6,7 @@ using AuthApp.Config;
 using AuthApp.Features.Auth.DTOs;
 using AuthApp.Features.Jwt;
 using AuthApp.Features.User;
+using AuthApp.Infrastructure.Auth.Providers;
 using AuthApp.Infrastructure.Email;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -17,7 +18,8 @@ public class AuthService(
     JwtService jwtService,
     AuthRepository authRepository,
     IEmailSender emailSender,
-    IOptions<Env> env
+    IOptions<Env> env,
+    IEnumerable<IOAuthProvider> providers
 )
 {
     // NOTE:
@@ -28,6 +30,10 @@ public class AuthService(
     private readonly AuthRepository _authRepository = authRepository;
     private readonly IEmailSender _emailSender = emailSender;
     private readonly Env _env = env.Value;
+
+    private readonly Dictionary<AuthProvider, IOAuthProvider> _providers = providers.ToDictionary(
+        p => p.Provider
+    );
 
     private async Task SendEmail(string email, string subject, string html)
     {
@@ -40,7 +46,7 @@ public class AuthService(
             await _userRepository.FindUserByEmail(data.Email)
             ?? throw new BadRequestException("Invalid Credentials");
 
-        if (user.Provider != AuthProviders.CREDENTIALS)
+        if (user.Provider != AuthProvider.CREDENTIALS)
             throw new BadRequestException(
                 "This account uses a different sign-in method. Please use the original one."
             );
@@ -135,7 +141,7 @@ public class AuthService(
         if (user is null)
             return;
 
-        if (user.Provider != AuthProviders.CREDENTIALS)
+        if (user.Provider != AuthProvider.CREDENTIALS)
             throw new BadRequestException(
                 "This account uses a different sign-in method. Please use the original one."
             );
@@ -159,7 +165,7 @@ public class AuthService(
             await _userRepository.FindUserById(userId)
             ?? throw new BadRequestException("User not found");
 
-        if (user.Provider != AuthProviders.CREDENTIALS)
+        if (user.Provider != AuthProvider.CREDENTIALS)
             throw new BadRequestException(
                 "This account uses a different sign-in method. Please use the original one."
             );
@@ -209,5 +215,41 @@ public class AuthService(
             "Verify your email",
             EmailTemplates.VerifyEmail(code)
         );
+    }
+
+    public async Task<TokenPair> OAuthLogin(AuthProvider provider, string token)
+    {
+        if (provider == AuthProvider.CREDENTIALS)
+            throw new ArgumentException("OAuth login does not support credentials provider");
+
+        if (!_providers.TryGetValue(provider, out var oauth))
+            throw new InvalidOperationException($"Unsupported OAuth provider: {provider}");
+
+        var identity = await oauth.ValidateAndGetEmailAsync(token);
+
+        var user = await _userRepository.FindUserByEmail(identity.Email);
+
+        if (user is null)
+        {
+            user = await _userRepository.CreateOAuthUser(
+                identity.Email,
+                provider,
+                identity.ProviderUserId
+            );
+        }
+        else if (user.Provider != provider)
+        {
+            throw new ConflictException($"User already exists with {user.Provider} provider");
+        }
+
+        var accessToken = _jwtService.GenerateAccessToken(
+            user.Id,
+            isOnboard: user.IsOnboard,
+            isVerified: true
+        );
+
+        var refreshToken = _jwtService.GenerateRefreshToken(user.Id, user.TokenVersion);
+
+        return new TokenPair(accessToken, refreshToken);
     }
 }

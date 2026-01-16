@@ -1,9 +1,12 @@
+using AuthApp.Common.Auth;
 using AuthApp.Common.Extensions;
 using AuthApp.Common.RateLimit;
 using AuthApp.Features.Auth.DTOs;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using StackExchange.Redis;
 
 namespace AuthApp.Features.Auth
 {
@@ -90,12 +93,44 @@ namespace AuthApp.Features.Auth
             return Ok(new { message = "Verification email sent" });
         }
 
-        // [HttpPost("auth/oauth/{provider}")]
+        // REDIRECT
+
+        // [HttpGet("auth/oauth/{provider}")]
+        // [AllowAnonymous]
         // [EnableRateLimiting(RateLimitPolicies.AuthLogin)]
-        // public async Task<IActionResult> OAuthLogin(OAuthProvider provider, OAuthLoginDto dto)
+        // public IActionResult OAuthLogin(AuthProvider provider)
         // {
-        //     var result = await authService.LoginWithOAuth(provider, dto);
-        //     return Ok(result);
+        //     return provider switch
+        //     {
+        //         AuthProvider.GOOGLE => Challenge("Google"),
+        //         AuthProvider.GITHUB => Challenge("GitHub"),
+        //         _ => BadRequest("Provider does not support OAuth"),
+        //     };
         // }
+
+        [AllowAnonymous]
+        [HttpPost("oauth/{provider}")]
+        public async Task<IActionResult> OAuthLogin(AuthProvider provider, [FromBody] OAuthDto dto)
+        {
+            switch (provider)
+            {
+                case AuthProvider.GOOGLE:
+                {
+                    var result = await _authService.OAuthLogin(AuthProvider.GOOGLE, dto.Token);
+
+                    return Ok(result);
+                }
+
+                case AuthProvider.GITHUB:
+                {
+                    var result = await _authService.OAuthLogin(AuthProvider.GITHUB, dto.Token);
+
+                    return Ok(result);
+                }
+
+                default:
+                    return BadRequest("Unsupported provider");
+            }
+        }
     }
 }

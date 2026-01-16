@@ -1,3 +1,4 @@
+using AuthApp.Common.Auth;
 using AuthApp.Features.User.DTOs;
 using AuthApp.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
@@ -48,6 +49,19 @@ public class UserRepository(AppDbContext db)
     public async Task<User> CreateUser(string email, string hashedPassword)
     {
         var user = new User { Email = email, Password = hashedPassword };
+        await _db.Users.AddAsync(user);
+        await _db.SaveChangesAsync();
+        return user;
+    }
+
+    public async Task<User> CreateOAuthUser(string email, AuthProvider provider, string providerId)
+    {
+        var user = new User
+        {
+            Email = email,
+            Provider = provider,
+            ProviderId = providerId,
+        };
         await _db.Users.AddAsync(user);
         await _db.SaveChangesAsync();
         return user;

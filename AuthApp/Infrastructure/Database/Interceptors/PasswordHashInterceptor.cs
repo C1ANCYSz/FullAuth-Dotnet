@@ -1,3 +1,4 @@
+using AuthApp.Common.Auth;
 using AuthApp.Common.Utils.Security;
 using AuthApp.Features.User;
 using Microsoft.EntityFrameworkCore;
@@ -12,8 +13,14 @@ public sealed class PasswordHashInterceptor : SaveChangesInterceptor
         var entries = context
             .ChangeTracker.Entries<User>()
             .Where(e =>
-                e.State == EntityState.Added
-                || (e.State == EntityState.Modified && e.Property(nameof(User.Password)).IsModified)
+                e.Entity.Provider == AuthProvider.CREDENTIALS
+                && (
+                    e.State == EntityState.Added
+                    || (
+                        e.State == EntityState.Modified
+                        && e.Property(nameof(User.Password)).IsModified
+                    )
+                )
             );
 
         foreach (var entry in entries)
@@ -21,7 +28,7 @@ public sealed class PasswordHashInterceptor : SaveChangesInterceptor
             var password = entry.Entity.Password;
 
             if (string.IsNullOrWhiteSpace(password))
-                throw new InvalidOperationException("Password cannot be empty");
+                throw new InvalidOperationException("Password is required for credentials users");
 
             if (PasswordUtil.IsHashed(password))
                 continue;

@@ -21,7 +21,7 @@ public class User
     public string Bio { get; set; } = string.Empty;
 
     // Auth provider
-    public AuthProviders Provider { get; set; } = AuthProviders.CREDENTIALS;
+    public AuthProvider Provider { get; set; } = AuthProvider.CREDENTIALS;
     public string? ProviderId { get; set; }
 
     // Meta
@@ -52,7 +52,7 @@ public sealed class UserModelConfiguration : IEntityTypeConfiguration<User>
         entity
             .Property(u => u.Provider)
             .HasConversion<int>()
-            .HasDefaultValue(AuthProviders.CREDENTIALS)
+            .HasDefaultValue(AuthProvider.CREDENTIALS)
             .IsRequired();
 
         entity.Property(u => u.ProviderId).IsRequired(false);

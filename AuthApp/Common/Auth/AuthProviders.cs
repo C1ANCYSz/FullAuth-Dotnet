@@ -1,9 +1,8 @@
 //AuthApp/Common/Auth/AuthProviders.cs
-using System;
 
 namespace AuthApp.Common.Auth;
 
-public enum AuthProviders
+public enum AuthProvider
 {
     CREDENTIALS = 0,
     GOOGLE = 1,

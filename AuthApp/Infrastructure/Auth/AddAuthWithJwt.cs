@@ -4,6 +4,7 @@ using AuthApp.Common.Auth;
 using AuthApp.Common.Constants;
 using AuthApp.Config;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 namespace AuthApp.Infrastructure.Auth;
@@ -14,6 +15,12 @@ public static class AddAuth
     {
         JwtSecurityTokenHandler.DefaultMapInboundClaims = false;
 
+        using var provider = builder.Services.BuildServiceProvider();
+
+        var jwt = provider.GetRequiredService<IOptions<JwtOptions>>().Value;
+
+        var oauth = provider.GetRequiredService<IOptions<OAuthOptions>>().Value;
+
         builder
             .Services.AddAuthentication(options =>
             {
@@ -22,8 +29,6 @@ public static class AddAuth
             })
             .AddJwtBearer(options =>
             {
-                var jwt = builder.Configuration.GetSection("JWT").Get<JwtOptions>()!;
-
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = false,
@@ -35,7 +40,16 @@ public static class AddAuth
                     ValidateLifetime = true,
                     ClockSkew = TimeSpan.Zero,
                 };
-            });
+            })
+            .AddGoogle(
+                "Google",
+                options =>
+                {
+                    options.ClientId = oauth.Google.CLIENT_ID;
+                    options.ClientSecret = oauth.Google.CLIENT_SECRET;
+                    options.CallbackPath = oauth.Google.CALLBACK_URI;
+                }
+            );
 
         builder
             .Services.AddAuthorizationBuilder()
