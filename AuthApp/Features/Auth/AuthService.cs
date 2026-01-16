@@ -135,6 +135,11 @@ public class AuthService(
         if (user is null)
             return;
 
+        if (user.Provider != AuthProviders.CREDENTIALS)
+            throw new BadRequestException(
+                "This account uses a different sign-in method. Please use the original one."
+            );
+
         var rawToken = _authRepository.GenerateResetToken();
         await _authRepository.StoreResetToken(user.Id, rawToken);
 
@@ -153,6 +158,11 @@ public class AuthService(
         var user =
             await _userRepository.FindUserById(userId)
             ?? throw new BadRequestException("User not found");
+
+        if (user.Provider != AuthProviders.CREDENTIALS)
+            throw new BadRequestException(
+                "This account uses a different sign-in method. Please use the original one."
+            );
 
         user.Password = data.Password;
         await _userRepository.SaveAsync();

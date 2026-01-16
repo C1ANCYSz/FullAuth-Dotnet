@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using AuthApp.Common.Auth;
 using AuthApp.Common.Constants;
 using AuthApp.Config;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -39,19 +40,19 @@ public static class AddAuth
         builder
             .Services.AddAuthorizationBuilder()
             .AddPolicy(
-                "OnboardedOnly",
+                AuthPolicies.Onboard,
                 policy =>
                 {
                     policy.RequireAuthenticatedUser();
-                    policy.RequireClaim("is_onboard", JwtArributes.trueValue);
+                    policy.RequireClaim(JwtArributes.isOnboard, JwtArributes.trueValue);
                 }
             )
             .AddPolicy(
-                "NotOnboardedOnly",
+                AuthPolicies.NotOnboard,
                 policy =>
                 {
                     policy.RequireAuthenticatedUser();
-                    policy.RequireClaim("is_onboard", JwtArributes.falseValue);
+                    policy.RequireClaim(JwtArributes.isOnboard, JwtArributes.falseValue);
                 }
             );
 
