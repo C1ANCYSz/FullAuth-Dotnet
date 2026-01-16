@@ -109,6 +109,7 @@ namespace AuthApp.Features.Auth
         // }
 
         [AllowAnonymous]
+        [EnableRateLimiting(RateLimitPolicies.AuthLogin)]
         [HttpPost("oauth/{provider}")]
         public async Task<IActionResult> OAuthLogin(AuthProvider provider, [FromBody] OAuthDto dto)
         {
