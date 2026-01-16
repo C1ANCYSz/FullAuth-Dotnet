@@ -6,7 +6,7 @@ namespace AuthApp.Common.Middleware;
 
 public sealed class RedisRateLimitMiddleware(RequestDelegate next, IConnectionMultiplexer redis)
 {
-    private const string RedisKeyPrefix = "ratelimit:v1";
+    private const string RedisKeyPrefix = "ratelimit:v2";
 
     private readonly RequestDelegate _next = next;
     private readonly IDatabase _db = redis.GetDatabase();
@@ -35,23 +35,25 @@ public sealed class RedisRateLimitMiddleware(RequestDelegate next, IConnectionMu
             return;
         }
 
-        var windowSeconds = (long)policy.Window.TotalSeconds;
-        var windowId = DateTimeOffset.UtcNow.ToUnixTimeSeconds() / windowSeconds;
+        var redisKey = $"{RedisKeyPrefix}:{attr.PolicyName}:{partition}";
+        var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
-        var redisKey = $"{RedisKeyPrefix}:{attr.PolicyName}:{partition}:{windowId}";
+        var capacity = policy.PermitLimit;
+        var refillRatePerSecond = capacity / policy.Window.TotalSeconds;
 
         int result;
         try
         {
             result = (int)
                 await _db.ScriptEvaluateAsync(
-                    RedisScripts.FixedWindowEnforced,
+                    RedisScripts.TokenBucket,
                     [redisKey],
-                    [windowSeconds, policy.PermitLimit]
+                    [capacity, refillRatePerSecond, now]
                 );
         }
         catch
         {
+            // fail open
             await _next(context);
             return;
         }
@@ -60,7 +62,7 @@ public sealed class RedisRateLimitMiddleware(RequestDelegate next, IConnectionMu
         {
             context.Response.StatusCode = StatusCodes.Status429TooManyRequests;
             context.Response.ContentType = "application/json";
-            context.Response.Headers.RetryAfter = windowSeconds.ToString();
+            context.Response.Headers.RetryAfter = ((int)policy.Window.TotalSeconds).ToString();
 
             await context.Response.WriteAsync(
                 $$"""
@@ -70,7 +72,6 @@ public sealed class RedisRateLimitMiddleware(RequestDelegate next, IConnectionMu
                 }
                 """
             );
-
             return;
         }
 
