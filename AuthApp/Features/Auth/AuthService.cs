@@ -135,7 +135,7 @@ public class AuthService(
         if (user is null)
             return;
 
-        var rawToken = _authRepository.GenerateSecureToken();
+        var rawToken = _authRepository.GenerateResetToken();
         await _authRepository.StoreResetToken(user.Id, rawToken);
 
         var resetLink =

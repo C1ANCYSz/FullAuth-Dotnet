@@ -103,7 +103,7 @@ public class AuthRepository(IConnectionMultiplexer redis)
         );
     }
 
-    public string GenerateSecureToken() =>
+    public string GenerateResetToken() =>
         Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
 
     private static string Normalize(string value) => value.Trim().ToLowerInvariant();
