@@ -1,87 +1,116 @@
 using System.Security.Cryptography;
 using System.Text;
+using AuthApp.Common.RateLimit;
 using StackExchange.Redis;
 
 namespace AuthApp.Features.Auth;
 
 public class AuthRepository(IConnectionMultiplexer redis)
 {
-    private readonly IDatabase _redis = redis.GetDatabase();
+    private readonly IDatabase _db = redis.GetDatabase();
 
-    private static string ResetPasswordKey(string hashedToken) => $"auth:forgot_pwd:{hashedToken}";
+    private const int ResetTokenTtlMinutes = 15;
+    private const int VerifyCodeTtlMinutes = 10;
+    private const int CooldownTtlMinutes = 3;
+    private const int VerifyMaxAttempts = 5;
 
-    private static string ResetPasswordEmailCooldownKey(string email)
+    private static string ResetTokenKey(string hash) => $"auth:reset:{hash}";
+
+    private static string VerifyCodeKey(Guid userId) => $"auth:verify:{userId}";
+
+    private static string VerifyAttemptsKey(Guid userId) => $"auth:verify:attempts:{userId}";
+
+    private static string CooldownKey(string emailHash) => $"auth:cooldown:{emailHash}";
+
+    public async Task StoreResetToken(Guid userId, string rawToken)
     {
-        var emailHash = HashEmail(email);
-        return $"auth:forgot_pwd:cooldown:email:{emailHash}";
+        var hash = Hash(rawToken);
+
+        await _db.StringSetAsync(
+            ResetTokenKey(hash),
+            userId.ToString(),
+            TimeSpan.FromMinutes(ResetTokenTtlMinutes)
+        );
+    }
+
+    public async Task<Guid?> ConsumeResetToken(string rawToken)
+    {
+        var hash = Hash(rawToken);
+        var key = ResetTokenKey(hash);
+
+        var result = await _db.ScriptEvaluateAsync(RedisScripts.ConsumeValue, [key]);
+
+        if (result.IsNull)
+            return null;
+
+        var value = (string?)result;
+        if (value is null)
+            return null;
+
+        return Guid.Parse(value);
+    }
+
+    public async Task<string> CreateEmailVerificationCode(Guid userId)
+    {
+        var code = RandomNumberGenerator.GetInt32(100_000, 1_000_000).ToString();
+
+        await _db.StringSetAsync(
+            VerifyCodeKey(userId),
+            Hash(code),
+            TimeSpan.FromMinutes(VerifyCodeTtlMinutes)
+        );
+
+        return code;
+    }
+
+    public async Task<bool> VerifyEmailCode(Guid userId, string code)
+    {
+        var attemptsKey = VerifyAttemptsKey(userId);
+        var codeKey = VerifyCodeKey(userId);
+        var hashedCode = Hash(code);
+
+        var attempts = (int)
+            await _db.ScriptEvaluateAsync(
+                RedisScripts.IncrementWithLimit,
+                [attemptsKey],
+                [VerifyMaxAttempts, TimeSpan.FromMinutes(VerifyCodeTtlMinutes).TotalSeconds]
+            );
+
+        if (attempts == -1)
+            return false;
+
+        var verified = (int)
+            await _db.ScriptEvaluateAsync(RedisScripts.ConsumeIfEquals, [codeKey], [hashedCode]);
+
+        if (verified == 1)
+        {
+            await _db.KeyDeleteAsync(attemptsKey);
+            return true;
+        }
+
+        return false;
     }
 
     public async Task<bool> TrySetEmailCooldown(string email)
     {
-        var key = ResetPasswordEmailCooldownKey(email);
+        var key = CooldownKey(Hash(Normalize(email)));
 
-        //SET NX
-        return await _redis.StringSetAsync(
+        return await _db.StringSetAsync(
             key,
             "1",
-            TimeSpan.FromMinutes(15),
-            when: When.NotExists
+            TimeSpan.FromMinutes(CooldownTtlMinutes),
+            When.NotExists
         );
     }
 
-    private static string HashEmail(string email)
+    public string GenerateSecureToken() =>
+        Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+
+    private static string Normalize(string value) => value.Trim().ToLowerInvariant();
+
+    private static string Hash(string value)
     {
-        var normalized = email.Trim().ToLowerInvariant();
-
-        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(normalized));
-        return Convert.ToBase64String(bytes);
-    }
-
-    public async Task StoreResetToken(Guid userId, string rawToken)
-    {
-        var hashedToken = HashResetToken(rawToken);
-
-        await _redis.StringSetAsync(
-            ResetPasswordKey(hashedToken),
-            userId.ToString(),
-            TimeSpan.FromMinutes(15)
-        );
-    }
-
-    public string GenerateResetToken()
-    {
-        var bytes = RandomNumberGenerator.GetBytes(32);
-        return Convert.ToBase64String(bytes);
-    }
-
-    public string HashResetToken(string rawToken)
-    {
-        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(rawToken));
-        return Convert.ToBase64String(bytes);
-    }
-
-    public async Task DeleteResetToken(string hashedToken)
-    {
-        await _redis.KeyDeleteAsync(ResetPasswordKey(hashedToken));
-    }
-
-    public async Task<Guid?> GetUserIdByResetToken(string rawToken)
-    {
-        var hashedToken = HashResetToken(rawToken);
-
-        var value = await _redis.StringGetAsync(ResetPasswordKey(hashedToken));
-
-        if (value.IsNullOrEmpty)
-            return null;
-
-        if (!Guid.TryParse(value.ToString(), out var userId))
-            return null;
-
-        return userId;
-    }
-
-    public string GenerateEmailVerificationCode()
-    {
-        return RandomNumberGenerator.GetInt32(100_000, 1_000_000).ToString();
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(value));
+        return Convert.ToHexString(hash);
     }
 }

@@ -19,4 +19,11 @@ internal static class RateLimitPartition
 
         return ip.ToString();
     }
+
+    public static string ResolveForKey(HttpContext context)
+    {
+        var raw = Resolve(context);
+
+        return raw.Replace(".", "_").Replace(":", "_");
+    }
 }

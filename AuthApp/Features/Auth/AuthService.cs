@@ -20,13 +20,21 @@ public class AuthService(
     IOptions<Env> env
 )
 {
+    // NOTE:
+    // Password hashing is enforced at DB level via interceptor.
+    // Do NOT hash passwords manually in services.
     private readonly UserRepository _userRepository = userRepository;
     private readonly JwtService _jwtService = jwtService;
     private readonly AuthRepository _authRepository = authRepository;
     private readonly IEmailSender _emailSender = emailSender;
     private readonly Env _env = env.Value;
 
-    public async Task<LoginResponseDto> Login(LoginDto data)
+    private async Task SendEmail(string email, string subject, string html)
+    {
+        await _emailSender.SendAsync(email, subject, html);
+    }
+
+    public async Task<TokenPair> Login(LoginDto data)
     {
         var user =
             await _userRepository.FindUserByEmail(data.Email)
@@ -44,26 +52,33 @@ public class AuthService(
             throw new BadRequestException("Invalid Credentials");
 
         var accessToken = _jwtService.GenerateAccessToken(user.Id, user.IsOnboard, user.IsVerified);
+        if (!user.IsVerified)
+        {
+            return new TokenPair(accessToken, null);
+        }
+
         var refreshToken = _jwtService.GenerateRefreshToken(user.Id, user.TokenVersion);
 
-        return new LoginResponseDto { AccessToken = accessToken, RefreshToken = refreshToken };
+        return new TokenPair(accessToken, refreshToken);
     }
 
-    public async Task<LoginResponseDto> Signup(SignupDto data)
+    public async Task<TokenPair> Signup(SignupDto data)
     {
-        var existingUser = await _userRepository.FindUserByEmail(data.Email);
-        if (existingUser is not null)
-            throw new BadRequestException("Email already in use");
-
         if (!PasswordUtil.PasswordsAreEqual(data.Password, data.ConfirmPassword))
-            throw new BadRequestException("Password and Confirm Password must be same");
+            throw new BadRequestException("Passwords do not match");
+
+        var exists = await _userRepository.FindUserByEmail(data.Email);
+        if (exists is not null)
+            throw new BadRequestException("Email already in use");
 
         var user = await _userRepository.CreateUser(data.Email, data.Password);
 
-        var accessToken = _jwtService.GenerateAccessToken(user.Id, user.IsOnboard, user.IsVerified);
-        var refreshToken = _jwtService.GenerateRefreshToken(user.Id, user.TokenVersion);
+        var code = await _authRepository.CreateEmailVerificationCode(user.Id);
 
-        return new LoginResponseDto { AccessToken = accessToken, RefreshToken = refreshToken };
+        var accessToken = _jwtService.GenerateAccessToken(user.Id, false, false);
+
+        await SendEmail(user.Email, "Verify your email", EmailTemplates.VerifyEmail(code));
+        return new TokenPair(accessToken, null);
     }
 
     public async Task<TokenPair> RefreshTokens(string refreshToken)
@@ -81,6 +96,8 @@ public class AuthService(
 
         if (user.TokenVersion != tokenVersion)
             throw new UnauthorizedException("Token has been revoked");
+        if (!user.IsVerified)
+            throw new UnauthorizedException("Please verify your email");
 
         try
         {
@@ -118,29 +135,69 @@ public class AuthService(
         if (user is null)
             return;
 
-        var rawToken = _authRepository.GenerateResetToken();
+        var rawToken = _authRepository.GenerateSecureToken();
         await _authRepository.StoreResetToken(user.Id, rawToken);
 
         var resetLink =
             $"{_env.BASE_URL}/auth/reset-password?token={Uri.EscapeDataString(rawToken)}";
 
-        var template = EmailTemplates.ResetPassword(resetLink);
-        await _emailSender.SendAsync(user.Email, "Reset your password", template);
+        await SendEmail(user.Email, "Reset your password", EmailTemplates.ResetPassword(resetLink));
     }
 
     public async Task ResetPassword(string token, ResetPasswordDto data)
     {
         var userId =
-            await _authRepository.GetUserIdByResetToken(token)
+            await _authRepository.ConsumeResetToken(token)
             ?? throw new BadRequestException("Invalid or expired token");
 
         var user =
             await _userRepository.FindUserById(userId)
             ?? throw new BadRequestException("User not found");
 
-        user.Password = data.Password; // assume hashing handled in setter or repo
+        user.Password = data.Password;
+        await _userRepository.SaveAsync();
+    }
+
+    public async Task<TokenPair> VerifyEmail(Guid userId, string code)
+    {
+        var valid = await _authRepository.VerifyEmailCode(userId, code);
+        if (!valid)
+            throw new BadRequestException("Invalid or expired code");
+
+        var user =
+            await _userRepository.FindUserById(userId)
+            ?? throw new BadRequestException("User not found");
+        if (user.IsVerified)
+            throw new BadRequestException("Email already verified");
+
+        user.IsVerified = true;
         await _userRepository.SaveAsync();
 
-        await _authRepository.DeleteResetToken(_authRepository.HashResetToken(token));
+        var accessToken = _jwtService.GenerateAccessToken(user.Id, user.IsOnboard, true);
+        var refreshToken = _jwtService.GenerateRefreshToken(user.Id, user.TokenVersion);
+
+        return new TokenPair(accessToken, refreshToken);
+    }
+
+    public async Task ResendVerificationEmail(Guid userId)
+    {
+        var user =
+            await _userRepository.FindUserById(userId)
+            ?? throw new BadRequestException("User not found");
+
+        if (user.IsVerified)
+            throw new BadRequestException("Email already verified");
+
+        var allowed = await _authRepository.TrySetEmailCooldown(user.Email);
+        if (!allowed)
+            return;
+
+        var code = await _authRepository.CreateEmailVerificationCode(user.Id);
+
+        await _emailSender.SendAsync(
+            user.Email,
+            "Verify your email",
+            EmailTemplates.VerifyEmail(code)
+        );
     }
 }

@@ -46,7 +46,7 @@ public sealed class JwtService(IOptions<JwtOptions> options)
         var claims = new[]
         {
             new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
-            new Claim("token_version", tokenVersion.ToString()),
+            new Claim(JwtArributes.version, tokenVersion.ToString()),
         };
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwt.REFRESH_TOKEN_SECRET));

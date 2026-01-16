@@ -12,6 +12,8 @@ public static class RateLimitPolicies
     public const string AuthForgotPassword = "auth:forgot-password";
     public const string AuthResetPassword = "auth:reset-password";
 
+    public const string AuthVerifyEmail = "auth:verify-email";
+
     // User
     public const string UserRead = "user:read";
     public const string UserWrite = "user:write";

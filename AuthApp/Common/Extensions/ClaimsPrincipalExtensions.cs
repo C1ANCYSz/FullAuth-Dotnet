@@ -19,7 +19,7 @@ public static class ClaimsPrincipalExtensions
     public static int GetTokenVersion(this ClaimsPrincipal user)
     {
         var value =
-            user.FindFirst("token_version")?.Value
+            user.FindFirst(JwtArributes.version)?.Value
             ?? throw new UnauthorizedException("Token version missing");
 
         return int.Parse(value);

@@ -24,9 +24,11 @@ namespace AuthApp.Features.Auth
         [EnableRateLimiting(RateLimitPolicies.AuthSignup)]
         public async Task<IActionResult> Signup(SignupDto data)
         {
-            return Ok(await _authService.Signup(data));
+            await _authService.Signup(data);
+            return Ok(new { message = "Account has been created successfully" });
         }
 
+        [Authorize]
         [HttpPost("refresh-token")]
         [EnableRateLimiting(RateLimitPolicies.AuthRefresh)]
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenDto data)
@@ -66,6 +68,28 @@ namespace AuthApp.Features.Auth
 
             return Ok(new { message = "Password has been reset successfully" });
         }
+
+        [Authorize]
+        [HttpPost("verify-email")]
+        [EnableRateLimiting(RateLimitPolicies.AuthVerifyEmail)]
+        public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailDto data)
+        {
+            var userId = User.GetUserId();
+
+            return Ok(await _authService.VerifyEmail(userId, data.Code));
+        }
+
+        [Authorize]
+        [HttpPost("resend-verification")]
+        [EnableRateLimiting(RateLimitPolicies.AuthVerifyEmail)]
+        public async Task<IActionResult> ResendVerification()
+        {
+            var userId = User.GetUserId();
+            await _authService.ResendVerificationEmail(userId);
+
+            return Ok(new { message = "Verification email sent" });
+        }
+
         // [HttpPost("auth/oauth/{provider}")]
         // [EnableRateLimiting(RateLimitPolicies.AuthLogin)]
         // public async Task<IActionResult> OAuthLogin(OAuthProvider provider, OAuthLoginDto dto)

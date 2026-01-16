@@ -1,13 +1,13 @@
-using System;
-
-namespace AuthApp.Common.Middleware;
-
 using AuthApp.Common.RateLimit;
 using Microsoft.AspNetCore.RateLimiting;
 using StackExchange.Redis;
 
+namespace AuthApp.Common.Middleware;
+
 public sealed class RedisRateLimitMiddleware(RequestDelegate next, IConnectionMultiplexer redis)
 {
+    private const string RedisKeyPrefix = "ratelimit:v1";
+
     private readonly RequestDelegate _next = next;
     private readonly IDatabase _db = redis.GetDatabase();
 
@@ -16,43 +16,51 @@ public sealed class RedisRateLimitMiddleware(RequestDelegate next, IConnectionMu
         var endpoint = context.GetEndpoint();
         var attr = endpoint?.Metadata.GetMetadata<EnableRateLimitingAttribute>();
 
-        if (attr is null)
-        {
-            await _next(context);
-            return;
-        }
-        var policyName = attr.PolicyName;
-
-        if (string.IsNullOrWhiteSpace(policyName))
+        if (attr?.PolicyName is null)
         {
             await _next(context);
             return;
         }
 
-        if (!AuthRateLimitConfig.Policies.TryGetValue(policyName, out var policy))
+        if (!AuthRateLimitConfig.Policies.TryGetValue(attr.PolicyName, out var policy))
         {
             await _next(context);
             return;
         }
 
-        var partition = RateLimitPartition.Resolve(context);
+        var partition = ResolvePartition(context);
+        if (partition is null)
+        {
+            await _next(context);
+            return;
+        }
 
         var windowSeconds = (long)policy.Window.TotalSeconds;
         var windowId = DateTimeOffset.UtcNow.ToUnixTimeSeconds() / windowSeconds;
 
-        var redisKey = $"ratelimit:{attr.PolicyName}:{partition}:{windowId}";
+        var redisKey = $"{RedisKeyPrefix}:{attr.PolicyName}:{partition}:{windowId}";
 
-        var count = (int)
-            await _db.ScriptEvaluateAsync(
-                RedisScripts.FixedWindow,
-                [redisKey],
-                [windowSeconds, policy.PermitLimit]
-            );
+        int result;
+        try
+        {
+            result = (int)
+                await _db.ScriptEvaluateAsync(
+                    RedisScripts.FixedWindowEnforced,
+                    [redisKey],
+                    [windowSeconds, policy.PermitLimit]
+                );
+        }
+        catch
+        {
+            await _next(context);
+            return;
+        }
 
-        if (count > policy.PermitLimit)
+        if (result == -1)
         {
             context.Response.StatusCode = StatusCodes.Status429TooManyRequests;
             context.Response.ContentType = "application/json";
+            context.Response.Headers.RetryAfter = windowSeconds.ToString();
 
             await context.Response.WriteAsync(
                 $$"""
@@ -67,5 +75,21 @@ public sealed class RedisRateLimitMiddleware(RequestDelegate next, IConnectionMu
         }
 
         await _next(context);
+    }
+
+    private static string? ResolvePartition(HttpContext context)
+    {
+        if (context.User?.Identity?.IsAuthenticated == true)
+        {
+            var userId = context.User.FindFirst("sub")?.Value;
+            if (!string.IsNullOrWhiteSpace(userId))
+                return $"user:{userId}";
+        }
+
+        var ip = RateLimitPartition.ResolveForKey(context);
+        if (!string.IsNullOrWhiteSpace(ip))
+            return $"ip:{ip}";
+
+        return null;
     }
 }
