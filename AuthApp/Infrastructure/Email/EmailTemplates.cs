@@ -1,10 +1,8 @@
-using System;
-
 namespace AuthApp.Infrastructure.Email;
 
 public static class EmailTemplates
 {
-    private static string Layout(string title, string body, string actionText, string link) =>
+    private static string BaseLayout(string title, string content) =>
         $"""
 <!DOCTYPE html>
 <html lang="en">
@@ -17,7 +15,7 @@ public static class EmailTemplates
     margin:0;
     padding:0;
     background-color:#0f172a;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
     color:#e5e7eb;
 ">
 <table width="100%" cellpadding="0" cellspacing="0">
@@ -32,52 +30,7 @@ public static class EmailTemplates
     ">
         <tr>
             <td>
-                <h1 style="
-                    margin:0 0 12px 0;
-                    font-size:22px;
-                    font-weight:600;
-                    color:#f8fafc;
-                ">
-                    {title}
-                </h1>
-
-                <p style="
-                    margin:0 0 24px 0;
-                    font-size:15px;
-                    line-height:1.6;
-                    color:#cbd5f5;
-                ">
-                    {body}
-                </p>
-
-                <a href="{link}" style="
-                    display:inline-block;
-                    padding:14px 22px;
-                    background-color:#6366f1;
-                    color:#ffffff;
-                    text-decoration:none;
-                    font-weight:600;
-                    border-radius:10px;
-                    font-size:15px;
-                ">
-                    {actionText}
-                </a>
-
-                <p style="
-                    margin-top:28px;
-                    font-size:13px;
-                    color:#94a3b8;
-                ">
-                    If the button doesn't work, copy and paste this link into your browser:
-                </p>
-
-                <p style="
-                    word-break:break-all;
-                    font-size:12px;
-                    color:#64748b;
-                ">
-                    {link}
-                </p>
+                {content}
 
                 <hr style="
                     border:none;
@@ -110,16 +63,95 @@ public static class EmailTemplates
 </html>
 """;
 
-    public static string VerifyEmail(string link) =>
-        Layout(
+    private static string LayoutWithLink(
+        string title,
+        string body,
+        string actionText,
+        string link
+    ) =>
+        BaseLayout(
+            title,
+            $"""
+<h1 style="margin:0 0 12px;font-size:22px;font-weight:600;color:#f8fafc;">
+    {title}
+</h1>
+
+<p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#cbd5f5;">
+    {body}
+</p>
+
+<a href="{link}" style="
+    display:inline-block;
+    padding:14px 22px;
+    background-color:#6366f1;
+    color:#ffffff;
+    text-decoration:none;
+    font-weight:600;
+    border-radius:10px;
+    font-size:15px;
+">
+    {actionText}
+</a>
+
+<p style="margin-top:28px;font-size:13px;color:#94a3b8;">
+    If the button doesn't work, copy and paste this link into your browser:
+</p>
+
+<p style="word-break:break-all;font-size:12px;color:#64748b;">
+    {link}
+</p>
+"""
+        );
+
+    private static string LayoutWithCode(string title, string body, string code) =>
+        BaseLayout(
+            title,
+            $"""
+<h1 style="margin:0 0 12px;font-size:22px;font-weight:600;color:#f8fafc;">
+    {title}
+</h1>
+
+<p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#cbd5f5;">
+    {body}
+</p>
+
+<div style="
+    margin:24px 0;
+    padding:18px;
+    background-color:#020617;
+    border:1px solid #1e293b;
+    border-radius:12px;
+    text-align:center;
+">
+    <span style="
+        font-size:28px;
+        font-weight:700;
+        letter-spacing:4px;
+        color:#f8fafc;
+    ">
+        {code}
+    </span>
+</div>
+
+<p style="font-size:13px;color:#94a3b8;">
+    Enter this code in the app to continue.
+</p>
+"""
+        );
+
+    // =======================
+    // Public Templates
+    // =======================
+
+    public static string VerifyEmail(string verificationCode) =>
+        LayoutWithCode(
             "Verify your email",
-            "Thanks for signing up. Please confirm your email address to activate your account.",
-            "Verify Email",
-            link
+            "Thanks for signing up. Use the verification code below to activate your account.",
+            verificationCode
         );
 
     public static string ResetPassword(string link) =>
-        Layout(
+        LayoutWithLink(
             "Reset your password",
             "We received a request to reset your password. Click the button below to continue.",
             "Reset Password",
